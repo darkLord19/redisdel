@@ -50,7 +50,8 @@ func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
 		var err error
 		matchedKeysSoFar, cursor, err = redisClient.Scan(ctx, cursor, pattern, 1000).Result()
 		if err != nil {
-			log.Println("Failed to get matching keys for pattern", pattern)
+			log.Println("Failed to get matching keys for pattern", pattern, err)
+			close(matchedKeys)
 			return
 		}
 		if cursor == 0 {
@@ -59,6 +60,7 @@ func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
 		keys = append(keys, matchedKeysSoFar...)
 	}
 	matchedKeys <- keys
+	close(matchedKeys)
 }
 
 func main() {
