@@ -12,21 +12,40 @@ import (
 
 var redisClient *redis.Client
 
+type RedisServerConfigs struct {
+	Address string
+}
+
+type RedisSentinelConfigs struct {
+	MasterName string
+	Password   string
+	Addresses  []string
+}
+
 type RedisConfig struct {
-	Address  string
-	Username string
-	Password string
-	DB       uint8
+	Username        string
+	Password        string
+	ServerConfigs   *RedisServerConfigs
+	SentinelConfigs *RedisSentinelConfigs
 }
 
 func init() {
 	config := getRedisConfig()
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:     config.Address,
-		Password: config.Password,
-		Username: config.Username,
-		DB:       int(config.DB),
-	})
+	if config.ServerConfigs != nil {
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:     config.ServerConfigs.Address,
+			Password: config.Password,
+			Username: config.Username,
+		})
+	} else if config.SentinelConfigs != nil {
+		redisClient = redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:       config.SentinelConfigs.MasterName,
+			SentinelAddrs:    config.SentinelConfigs.Addresses,
+			SentinelPassword: config.SentinelConfigs.Password,
+			Username:         config.Username,
+			Password:         config.Password,
+		})
+	}
 }
 
 func getRedisConfig() *RedisConfig {
