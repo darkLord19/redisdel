@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -10,12 +12,33 @@ import (
 
 var redisClient *redis.Client
 
+type RedisConfig struct {
+	Address  string
+	Username string
+	Password string
+	DB       uint8
+}
+
 func init() {
+	config := getRedisConfig()
 	redisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     config.Address,
+		Password: config.Password,
+		Username: config.Username,
+		DB:       int(config.DB),
 	})
+}
+
+func getRedisConfig() *RedisConfig {
+	fileName := "redisdel.conf"
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		log.Println("Failed to read redis del config")
+		os.Exit(1)
+	}
+	var config RedisConfig
+	json.Unmarshal(data, &config)
+	return &config
 }
 
 func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
