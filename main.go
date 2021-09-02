@@ -99,5 +99,6 @@ func main() {
 	for i := range matchedKeysChans {
 		keys := <-matchedKeysChans[i]
 		log.Println(len(keys))
+		redisClient.Del(context.Background(), keys...)
 	}
 }
