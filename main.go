@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/samber/lo"
 )
 
 var redisClient *redis.Client
@@ -98,7 +100,16 @@ func main() {
 	}
 	for i := range matchedKeysChans {
 		keys := <-matchedKeysChans[i]
-		log.Println(len(keys))
-		redisClient.Del(context.Background(), keys...)
+		log.Println(argsWithoutProg[i], len(keys))
+		chunkedKeys := lo.Chunk(keys, 1000)
+		var wg sync.WaitGroup
+		for _, chunk := range chunkedKeys {
+			wg.Add(1)
+			go func(chunk []string) {
+				defer wg.Done()
+				redisClient.Del(context.Background(), chunk...)
+			}(chunk)
+		}
+		wg.Wait()
 	}
 }
