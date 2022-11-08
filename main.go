@@ -8,6 +8,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/darkLord19/redisdel/commands"
 	"github.com/go-redis/redis/v8"
 	"github.com/samber/lo"
 )
@@ -85,6 +86,9 @@ func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
 }
 
 func main() {
+	if err := commands.Run(os.Args[1:]); err != nil {
+		os.Exit(1)
+	}
 	argsWithoutProg := os.Args[1:]
 	lenghtOfArgsWithoutProg := len(argsWithoutProg)
 	if lenghtOfArgsWithoutProg == 0 {
