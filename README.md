@@ -1,6 +1,6 @@
 # redisdel
 
-Scan keys matching a given pattern and delete them.
+Scan for redis keys matching a given pattern and delete them.
 
 Steps - 
 1. set following in `redisdel.conf` - 
