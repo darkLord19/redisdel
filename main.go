@@ -66,7 +66,8 @@ func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
 	ctx := context.Background()
 	var cursor uint64
 	var keys []string
-	for {
+	hasNextPage := true
+	for hasNextPage {
 		var matchedKeysSoFar []string
 		var err error
 		matchedKeysSoFar, cursor, err = redisClient.Scan(ctx, cursor, pattern, 1000).Result()
@@ -75,10 +76,8 @@ func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
 			close(matchedKeys)
 			return
 		}
-		if cursor == 0 {
-			break
-		}
 		keys = append(keys, matchedKeysSoFar...)
+		hasNextPage = cursor != 0;
 	}
 	matchedKeys <- keys
 	close(matchedKeys)
