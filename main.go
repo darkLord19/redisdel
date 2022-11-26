@@ -2,83 +2,36 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/samber/lo"
 )
 
-var redisClient *redis.Client
+func getMatchingKeys(pattern string, matchedKeys chan []string, client *redis.Client) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-type RedisServerConfigs struct {
-	Address string
-}
-
-type RedisSentinelConfigs struct {
-	MasterName string
-	Password   string
-	Addresses  []string
-}
-
-type RedisConfig struct {
-	Username        string
-	Password        string
-	ServerConfigs   *RedisServerConfigs
-	SentinelConfigs *RedisSentinelConfigs
-}
-
-func init() {
-	config := getRedisConfig()
-	if config.ServerConfigs != nil {
-		redisClient = redis.NewClient(&redis.Options{
-			Addr:     config.ServerConfigs.Address,
-			Password: config.Password,
-			Username: config.Username,
-		})
-	} else if config.SentinelConfigs != nil {
-		redisClient = redis.NewFailoverClient(&redis.FailoverOptions{
-			MasterName:       config.SentinelConfigs.MasterName,
-			SentinelAddrs:    config.SentinelConfigs.Addresses,
-			SentinelPassword: config.SentinelConfigs.Password,
-			Username:         config.Username,
-			Password:         config.Password,
-		})
-	}
-}
-
-func getRedisConfig() *RedisConfig {
-	fileName := "redisdel.conf"
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Println("Failed to read redis del config")
-		os.Exit(1)
-	}
-	var config RedisConfig
-	json.Unmarshal(data, &config)
-	return &config
-}
-
-func getKeysMatchingPattern(pattern string, matchedKeys chan []string) {
-	ctx := context.Background()
 	var cursor uint64
 	var keys []string
 	hasNextPage := true
+
 	for hasNextPage {
 		var matchedKeysSoFar []string
 		var err error
-		matchedKeysSoFar, cursor, err = redisClient.Scan(ctx, cursor, pattern, 1000).Result()
+		matchedKeysSoFar, cursor, err = client.Scan(ctx, cursor, pattern, 1000).Result()
 		if err != nil {
-			log.Println("Failed to get matching keys for pattern", pattern, err)
+			log.Printf("Failed to get matching keys for pattern: %s with err:%v", pattern, err)
 			close(matchedKeys)
 			return
 		}
 		keys = append(keys, matchedKeysSoFar...)
-		hasNextPage = cursor != 0;
+		hasNextPage = cursor != 0
 	}
+
 	matchedKeys <- keys
 	close(matchedKeys)
 }
@@ -87,27 +40,35 @@ func main() {
 	argsWithoutProg := os.Args[1:]
 	lenghtOfArgsWithoutProg := len(argsWithoutProg)
 	if lenghtOfArgsWithoutProg == 0 {
-		log.Println("Please provide search patterns")
-		os.Exit(1)
+		log.Fatalln("No key patterns provided")
 	}
+
+	client := newRedisClient("redisdel.conf")
+	if client == nil {
+		log.Fatalln("Failed to initialise redis client")
+	}
+
 	matchedKeysChans := make([]chan []string, lenghtOfArgsWithoutProg)
 	for i := range matchedKeysChans {
 		matchedKeysChans[i] = make(chan []string)
 	}
+
 	for i, pattern := range argsWithoutProg {
-		go getKeysMatchingPattern(pattern, matchedKeysChans[i])
+		go getMatchingKeys(pattern, matchedKeysChans[i], client)
 	}
+
 	for i := range matchedKeysChans {
 		keys := <-matchedKeysChans[i]
-		log.Println(argsWithoutProg[i], len(keys))
+		log.Printf("Found %s keys for pattern %d", argsWithoutProg[i], len(keys))
 		chunkedKeys := lo.Chunk(keys, 1000)
 		var wg sync.WaitGroup
-		for _, chunk := range chunkedKeys {
+		for batch, chunk := range chunkedKeys {
 			wg.Add(1)
-			go func(chunk []string) {
+			go func(chunk []string, batch int) {
 				defer wg.Done()
-				redisClient.Del(context.Background(), chunk...)
-			}(chunk)
+				client.Del(context.Background(), chunk...)
+				log.Printf("Deleted batch %d of %d for %s", batch, len(chunkedKeys), argsWithoutProg[i])
+			}(chunk, batch)
 		}
 		wg.Wait()
 	}
