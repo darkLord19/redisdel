@@ -18,11 +18,11 @@ func getRedisConfig(cfgFile string) *RedisConfig {
 	return &config
 }
 
-func newRedisClient(cfgFile string) *redis.Client {
+func newRedisClient(cfgFile string, Addr string) *redis.Client {
 	config := getRedisConfig(cfgFile)
 	if config.ServerConfigs != nil {
 		return redis.NewClient(&redis.Options{
-			Addr:     config.ServerConfigs.Address,
+			Addr: Addr,
 			Password: config.Password,
 			Username: config.Username,
 		})

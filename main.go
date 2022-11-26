@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -48,7 +49,8 @@ func main() {
 				log.Fatalln("No key patterns provided")
 			}
 
-			client := newRedisClient("redisdel.conf")
+			addr := fmt.Sprintf("%s:%s", host, port)
+			client := newRedisClient("redisdel.conf", addr)
 			if client == nil {
 				log.Fatalln("Failed to initialise redis client")
 			}
