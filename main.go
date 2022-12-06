@@ -5,16 +5,12 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/samber/lo"
 )
 
 func getMatchingKeys(pattern string, matchedKeys chan []string, client *redis.Client) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	var cursor uint64
 	var keys []string
 	hasNextPage := true
@@ -22,7 +18,7 @@ func getMatchingKeys(pattern string, matchedKeys chan []string, client *redis.Cl
 	for hasNextPage {
 		var matchedKeysSoFar []string
 		var err error
-		matchedKeysSoFar, cursor, err = client.Scan(ctx, cursor, pattern, 1000).Result()
+		matchedKeysSoFar, cursor, err = client.Scan(context.TODO(), cursor, pattern, 1000).Result()
 		if err != nil {
 			log.Printf("Failed to get matching keys for pattern: %s with err:%v", pattern, err)
 			close(matchedKeys)
@@ -67,7 +63,7 @@ func main() {
 			go func(chunk []string, batch int) {
 				defer wg.Done()
 				client.Del(context.Background(), chunk...)
-				log.Printf("Deleted batch %d of %d for %s", batch, len(chunkedKeys), argsWithoutProg[i])
+				log.Printf("Deleted batch %d of %d for %s", batch+1, len(chunkedKeys), argsWithoutProg[i])
 			}(chunk, batch)
 		}
 		wg.Wait()
