@@ -1,28 +1,13 @@
 package main
 
 import (
-	"encoding/json"
-	"log"
-	"os"
-
 	"github.com/go-redis/redis/v8"
 )
 
-func getRedisConfig(cfgFile string) *RedisConfig {
-	data, err := os.ReadFile(cfgFile)
-	if err != nil {
-		log.Fatalln("Failed to read redis del config")
-	}
-	var config RedisConfig
-	json.Unmarshal(data, &config)
-	return &config
-}
-
-func newRedisClient(cfgFile string) *redis.Client {
-	config := getRedisConfig(cfgFile)
+func newRedisClient(config RedisConfig) *redis.Client {
 	if config.ServerConfigs != nil {
 		return redis.NewClient(&redis.Options{
-			Addr:     config.ServerConfigs.Address,
+			Addr: config.ServerConfigs.Address,
 			Password: config.Password,
 			Username: config.Username,
 		})
