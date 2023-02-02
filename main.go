@@ -49,31 +49,29 @@ func getMatchingKeys(pattern string, matchedKeys chan []string, client *redis.Cl
 
 func main() {
 	app := &cli.App{
-		Name:  "redisdel",
-		Usage: "Scan for redis keys matching a given pattern and delete them",
+		Name:    "redisdel",
+		Usage:   "Scan for redis keys matching a given pattern and delete them",
 		Version: "0.1.0",
-		Action: appAction,
+		Action:  appAction,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-					Name:  "host",
-					Usage: "redis host",
-					Destination: &host,
-					Required: true,
+				Name:        "host",
+				Usage:       "redis host",
+				Destination: &host,
 			},
 			&cli.StringFlag{
-				Name:  "port",
-				Usage: "redis port",
+				Name:        "port",
+				Usage:       "redis port",
 				Destination: &port,
-				Required: true,
 			},
 			&cli.StringFlag{
-				Name:  "username",
-				Usage: "redis username",
+				Name:        "username",
+				Usage:       "redis username",
 				Destination: &username,
 			},
 			&cli.StringFlag{
-				Name:  "password",
-				Usage: "redis password",
+				Name:        "password",
+				Usage:       "redis password",
 				Destination: &password,
 			},
 		},

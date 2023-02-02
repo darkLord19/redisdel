@@ -22,7 +22,7 @@ func appAction(cCtx *cli.Context) error {
 	redisServerConfig := RedisServerConfigs{
 		Address: addr,
 	}
-	if redisServerConfig.Address == "" {
+	if redisServerConfig.Address == ":" {
 		redisServerConfig.Address = fileConfig.ServerConfigs.Address
 	}
 
