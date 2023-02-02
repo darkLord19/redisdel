@@ -15,5 +15,6 @@ Steps -
 
 2. run
 ```
-go run main.go "key-pattern-to-delete"
+go build
+./redisdel "key-pattern-to-delete"
 ```
