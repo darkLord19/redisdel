@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"sync"
 
 	"github.com/samber/lo"
@@ -14,7 +14,8 @@ func appAction(cCtx *cli.Context) error {
 	argsWithoutProg := cCtx.Args().Slice()
 	lenghtOfArgsWithoutProg := len(argsWithoutProg)
 	if lenghtOfArgsWithoutProg == 0 {
-		log.Fatalln("No key patterns provided")
+		fmt.Println("No key patterns provided")
+		os.Exit(1)
 	}
 
 	addr := fmt.Sprintf("%s:%s", host, port)
@@ -41,7 +42,8 @@ func appAction(cCtx *cli.Context) error {
 
 	client := newRedisClient(redisConfig)
 	if client == nil {
-		log.Fatalln("Failed to initialise redis client")
+		fmt.Println("Failed to initialise redis client")
+		os.Exit(1)
 	}
 
 	matchedKeysChans := make([]chan []string, lenghtOfArgsWithoutProg)
@@ -55,7 +57,7 @@ func appAction(cCtx *cli.Context) error {
 
 	for i := range matchedKeysChans {
 		keys := <-matchedKeysChans[i]
-		log.Printf("Found %d keys for pattern %s", len(keys), argsWithoutProg[i])
+		fmt.Printf("Found %d keys for pattern %s", len(keys), argsWithoutProg[i])
 		chunkedKeys := lo.Chunk(keys, 1000)
 		var wg sync.WaitGroup
 		for batch, chunk := range chunkedKeys {
@@ -63,7 +65,7 @@ func appAction(cCtx *cli.Context) error {
 			go func(chunk []string, batch int) {
 				defer wg.Done()
 				client.Del(context.Background(), chunk...)
-				log.Printf("Deleted batch %d of %d for %s", batch, len(chunkedKeys), argsWithoutProg[i])
+				fmt.Printf("Deleted batch %d of %d for %s", batch, len(chunkedKeys), argsWithoutProg[i])
 			}(chunk, batch)
 		}
 		wg.Wait()
