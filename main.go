@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/go-redis/redis/v8"
@@ -18,7 +18,8 @@ var password string
 func getRedisConfig(cfgFile string) *RedisConfig {
 	data, err := os.ReadFile(cfgFile)
 	if err != nil {
-		log.Fatalln("Failed to read redis del config")
+		fmt.Println("Failed to read redis del config")
+		os.Exit(1)
 	}
 	var config RedisConfig
 	json.Unmarshal(data, &config)
@@ -35,7 +36,7 @@ func getMatchingKeys(pattern string, matchedKeys chan []string, client *redis.Cl
 		var err error
 		matchedKeysSoFar, cursor, err = client.Scan(context.TODO(), cursor, pattern, 1000).Result()
 		if err != nil {
-			log.Printf("Failed to get matching keys for pattern: %s with err:%v", pattern, err)
+			fmt.Printf("Failed to get matching keys for pattern: %s with err:%v", pattern, err)
 			close(matchedKeys)
 			return
 		}
@@ -78,6 +79,6 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
