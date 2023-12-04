@@ -1,0 +1,24 @@
+name: Auto build application
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v4
+      with:
+        go-version: ^1.21
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Build
+      run: make build
