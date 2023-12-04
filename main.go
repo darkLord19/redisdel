@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/urfave/cli/v2"
+	"github.com/spf13/viper"
 )
 
 var host string
@@ -77,6 +78,18 @@ func main() {
 			},
 		},
 	}
+
+	viper.AutomaticEnv()
+
+	viper.BindPFlag("host", app.Flags[0].(*cli.StringFlag))
+	viper.BindPFlag("port", app.Flags[1].(*cli.StringFlag))
+	viper.BindPFlag("username", app.Flags[2].(*cli.StringFlag))
+	viper.BindPFlag("password", app.Flags[3].(*cli.StringFlag))
+
+	host = viper.GetString("host")
+	port = viper.GetString("port")
+	username = viper.GetString("username")
+	password = viper.GetString("password")
 
 	if err := app.Run(os.Args); err != nil {
 		panic(err)
