@@ -2,8 +2,9 @@
 
 Scan for redis keys matching a given pattern and delete them.
 
-Steps - 
-1. set following in `redisdel.conf` - 
+## Prepare correct `redisdel.conf`
+
+`For single server deployment of redis`:
 ```
 {
     "ServerConfigs": {
@@ -12,8 +13,23 @@ Steps -
     "Password": "<password>"
 }
 ```
+`For sentinel deployment of redis`:
+```
+{
+    "Password": "<redis master node password>"
+    "Username": "<redis master node username>,
+    "MasterName": "<redis sentinel set master name>",
+    "Addresses": "<array of addresses belonging to redis sentinel>",
+    "Password": "<redis sentinel password>"
+}
+```
 
-2. run
+## Build
+```
+go build
+```
+
+## Run
 ```
 go build
 ./redisdel "key-pattern-to-delete"
